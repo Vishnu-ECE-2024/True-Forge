@@ -727,7 +727,7 @@ async function embedWatermark() {
     const r = await fetch(`${API}/watermark/${_lastUploadId}/embed`, {method:'POST'});
     const d = await r.json();
     if (r.ok) {
-      statusEl.textContent = '✓ Watermark embedded';
+      statusEl.innerHTML = '✓ Watermark embedded &nbsp;<a href="/api/watermark/'+_lastUploadId+'/download" download class="btn-blue" style="display:inline-block;text-decoration:none;font-size:11px;padding:3px 10px;">⬇ Download</a>';
       statusEl.style.color = '#4ade80';
       btn.textContent = '✓ Done';
     } else {
@@ -769,6 +769,7 @@ async function loadLibrary() {
             <span class="pill pill-${a.status}">${a.status}</span>
             <button onclick="searchByAsset('${a.asset_id}')" class="btn-blue">Find copies</button>
             <button onclick="goWatermark('${a.asset_id}')" class="btn-green">Watermark</button>
+            ${a.watermark_embedded ? `<a href="/api/watermark/${a.asset_id}/download" download class="btn-green" style="display:inline-block;text-decoration:none;">⬇ WM copy</a>` : ''}
             <button onclick="deleteAsset('${a.asset_id}',this)" class="btn-danger">Delete</button>
           </div>
         </div>`;

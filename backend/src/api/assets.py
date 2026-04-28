@@ -148,6 +148,7 @@ def list_assets(
             duration_seconds=a.duration_seconds,
             created_at=a.created_at,
             gemini_metadata=gm,
+            watermark_embedded=bool(a.watermark_embedded),
         ))
     return result
 

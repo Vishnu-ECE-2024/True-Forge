@@ -48,6 +48,7 @@ class AssetListItem(BaseModel):
     duration_seconds: Optional[float]
     created_at: datetime
     gemini_metadata: Optional[dict] = None
+    watermark_embedded: bool = False
 
 
 class SearchResult(BaseModel):

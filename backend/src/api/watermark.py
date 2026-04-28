@@ -12,6 +12,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -198,4 +199,26 @@ def watermark_status(asset_id: str, db: Session = Depends(get_db)) -> WatermarkS
             {"record_id": r.record_id, "method": r.method, "created_at": r.created_at.isoformat()}
             for r in records
         ],
+    )
+
+
+@router.get("/{asset_id}/download")
+def download_watermarked(asset_id: str, db: Session = Depends(get_db)) -> FileResponse:
+    """Download the watermarked copy of an asset."""
+    asset = db.get(Asset, asset_id)
+    if asset is None:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    asset_dir = settings.originals_dir / asset_id
+    wm_files = list(asset_dir.glob("watermarked.*"))
+    if not wm_files:
+        raise HTTPException(status_code=404, detail="No watermarked file found. Embed watermark first.")
+
+    wm_path = wm_files[0]
+    stem = Path(asset.original_filename).stem
+    download_name = f"{stem}_watermarked{wm_path.suffix}"
+    return FileResponse(
+        path=str(wm_path),
+        filename=download_name,
+        media_type="application/octet-stream",
     )
