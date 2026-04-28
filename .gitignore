@@ -1,0 +1,11 @@
+data/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.egg-info/
+.venv/
+venv/
+node_modules/
+android-app/
+desktop-app/

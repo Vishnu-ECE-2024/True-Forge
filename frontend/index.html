@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>True Forge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 950:'#060606', 900:'#0A0A0A', 800:'#141414', 700:'#1F1F1F', 600:'#2A2A2A', 500:'#3D3D3D' },
+            accent: { 600:'#A82E2E', 500:'#D43B3B', 400:'#E05050', 300:'#F08080' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root { --sidebar-w: 230px; }
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #e2e8f0;
+      background-color: #0A0A0A;
+      background-image:
+        /* marble veins – thin diagonal streaks */
+        linear-gradient(157deg, transparent 33%,   rgba(160,160,160,0.055) 33.4%, rgba(160,160,160,0.055) 34%,   transparent 34.6%),
+        linear-gradient(38deg,  transparent 58%,   rgba(255,255,255,0.032) 58.3%, rgba(255,255,255,0.032) 58.8%, transparent 59.3%),
+        linear-gradient(112deg, transparent 12%,   rgba(140,140,140,0.045) 12.4%, rgba(140,140,140,0.045) 13.1%, transparent 13.8%),
+        linear-gradient(80deg,  transparent 74%,   rgba(180,180,180,0.028) 74.3%, rgba(180,180,180,0.028) 74.8%, transparent 75.3%),
+        /* stone depth pools */
+        radial-gradient(ellipse 130% 75% at 80% 95%, #181818 0%, transparent 60%),
+        radial-gradient(ellipse 90%  65% at 10% 8%,  #0F0F0F 0%, transparent 55%);
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-w);
+      background:
+        linear-gradient(148deg, transparent 45%, rgba(180,180,180,0.05) 45.4%, rgba(180,180,180,0.05) 46%, transparent 46.7%),
+        linear-gradient(62deg,  transparent 20%, rgba(255,255,255,0.028) 20.4%, rgba(255,255,255,0.028) 21%, transparent 21.7%),
+        linear-gradient(180deg, #141414 0%, #0D0D0D 100%);
+      border-right: 1px solid rgba(150,150,150,.08);
+      display: flex; flex-direction: column;
+      z-index: 50;
+      transition: transform .25s ease;
+    }
+    #sidebar-logo {
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    #sidebar nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 10px;
+      color: #64748b; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all .15s;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: rgba(212,59,59,.1); color: #e2e8f0; }
+    .nav-item.active { background: linear-gradient(135deg,#D43B3B,#A82E2E); color: #fff; box-shadow: 0 4px 16px rgba(212,59,59,.35); }
+    .nav-item .icon { font-size: 14px; width: 20px; text-align: center; }
+    .nav-badge {
+      margin-left: auto; background: #ef4444;
+      color: #fff; font-size: 10px; font-weight: 700;
+      padding: 1px 6px; border-radius: 999px;
+    }
+    .nav-section-label {
+      color: #334155; font-size: 10px; font-weight: 700;
+      letter-spacing: .8px; padding: 12px 14px 4px;
+      text-transform: uppercase;
+    }
+    #sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid rgba(255,255,255,.07);
+    }
+
+    /* ── Mobile overlay ── */
+    #sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.6); z-index: 49;
+    }
+    @media (max-width: 767px) {
+      #sidebar { transform: translateX(-100%); }
+      #sidebar.open { transform: translateX(0); }
+      #sidebar-overlay.open { display: block; }
+      #main { margin-left: 0 !important; }
+      #topbar { display: flex !important; }
+    }
+
+    /* ── Main ── */
+    #main {
+      margin-left: var(--sidebar-w);
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      background: transparent;
+    }
+
+    /* ── Topbar (mobile only) ── */
+    #topbar {
+      display: none;
+      position: sticky; top: 0; z-index: 40;
+      background: linear-gradient(90deg, #141414 0%, #0A0A0A 100%); color: #fff;
+      padding: 12px 16px; align-items: center; gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+
+    /* ── Page header ── */
+    .page-header { padding: 30px 30px 0; }
+    .page-header h1 { font-size: 22px; font-weight: 800; color: #f1f5f9; margin: 0 0 3px; letter-spacing: -.3px; }
+    .page-header p  { font-size: 13px; color: #475569; margin: 0; }
+
+    /* ── Content area ── */
+    .page-content { padding: 22px 30px 48px; }
+
+    /* ── Cards ── */
+    .card {
+      background:
+        linear-gradient(135deg, transparent 40%, rgba(140,195,255,0.04) 40.4%, rgba(140,195,255,0.04) 41.2%, transparent 41.8%),
+        linear-gradient(48deg,  transparent 65%, rgba(255,255,255,0.025) 65.3%, rgba(255,255,255,0.025) 65.9%, transparent 66.5%),
+        linear-gradient(210deg, #102040 0%, #0b1a30 50%, #0d1e38 100%);
+      border: 1px solid rgba(150,150,150,.09);
+      border-radius: 16px;
+      box-shadow: 0 4px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+      padding: 20px;
+    }
+    .card-sm { padding: 14px 18px; }
+    .card-glow {
+      background:
+        linear-gradient(135deg, transparent 40%, rgba(140,195,255,0.04) 40.4%, rgba(140,195,255,0.04) 41.2%, transparent 41.8%),
+        linear-gradient(210deg, #102040 0%, #0b1a30 50%, #0d1e38 100%);
+      border: 1px solid rgba(212,59,59,.28);
+      border-radius: 16px;
+      box-shadow: 0 0 0 1px rgba(212,59,59,.1), 0 8px 32px rgba(212,59,59,.1), inset 0 1px 0 rgba(255,255,255,.04);
+      padding: 20px;
+    }
+
+    /* ── KPI cards ── */
+    .kpi {
+      background:
+        linear-gradient(128deg, transparent 38%, rgba(130,190,255,0.045) 38.4%, rgba(130,190,255,0.045) 39.2%, transparent 39.8%),
+        linear-gradient(215deg, #102040 0%, #0b1a30 55%, #0d1e38 100%);
+      border: 1px solid rgba(150,150,150,.09);
+      border-radius: 16px;
+      box-shadow: 0 4px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.04);
+      padding: 20px 22px;
+      display: flex; flex-direction: column; gap: 5px;
+      position: relative; overflow: hidden;
+    }
+    .kpi::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg,#D43B3B,transparent);
+      border-radius: 16px 16px 0 0;
+    }
+    .kpi-value { font-size: 30px; font-weight: 800; line-height: 1; }
+    .kpi-label { font-size: 12px; color: #475569; font-weight: 500; }
+    .kpi-delta { font-size: 11px; font-weight: 600; }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      border: 1.5px dashed rgba(255,255,255,.15);
+      border-radius: 16px;
+      transition: all .2s;
+      background:
+        linear-gradient(135deg, transparent 45%, rgba(130,190,255,0.03) 45.4%, rgba(130,190,255,0.03) 46%, transparent 46.6%),
+        rgba(12,26,54,.55);
+      cursor: pointer;
+    }
+    .drop-zone:hover { border-color: #D43B3B; background: rgba(212,59,59,.07); }
+    .drop-zone.over  { border-color: #D43B3B; background: rgba(212,59,59,.09); }
+
+    /* ── Status pills ── */
+    .pill {
+      display: inline-block; padding: 2px 10px;
+      border-radius: 999px; font-size: 11px; font-weight: 600;
+    }
+    .pill-pending    { background:rgba(251,191,36,.15); color:#fbbf24; }
+    .pill-processing { background:rgba(59,130,246,.15); color:#60a5fa; }
+    .pill-ready      { background:rgba(34,197,94,.15); color:#4ade80; }
+    .pill-failed     { background:rgba(239,68,68,.15); color:#f87171; }
+    .pill-queued     { background:rgba(251,191,36,.15); color:#fbbf24; }
+    .pill-running    { background:rgba(59,130,246,.15); color:#60a5fa; }
+    .pill-completed  { background:rgba(34,197,94,.15); color:#4ade80; }
+    .pill-exact         { background:rgba(239,68,68,.18); color:#f87171; }
+    .pill-near_duplicate{ background:rgba(212,59,59,.18); color:#E05050; }
+    .pill-partial       { background:rgba(251,191,36,.15); color:#fbbf24; }
+
+    /* ── Match bar ── */
+    .match-bar-bg { background: rgba(255,255,255,.08); border-radius:999px; height:6px; }
+    .match-bar-fg { background:linear-gradient(90deg,#D43B3B,#ef4444); border-radius:999px; height:6px; transition:width .4s; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      background: linear-gradient(135deg,#D43B3B,#A82E2E); color: #fff; border: none;
+      padding: 9px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .15s;
+      box-shadow: 0 4px 12px rgba(212,59,59,.3);
+    }
+    .btn-primary:hover  { background: linear-gradient(135deg,#E05050,#D43B3B); box-shadow: 0 6px 20px rgba(212,59,59,.4); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-ghost {
+      background: rgba(255,255,255,.06); color: #94a3b8; border: 1px solid rgba(255,255,255,.1);
+      padding: 7px 14px; border-radius: 9px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,.1); color: #e2e8f0; }
+    .btn-danger { background:rgba(239,68,68,.15); color:#f87171; border:1px solid rgba(239,68,68,.2); padding:5px 12px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; }
+    .btn-danger:hover { background:rgba(239,68,68,.25); }
+    .btn-blue  { background:rgba(59,130,246,.15); color:#60a5fa; border:1px solid rgba(59,130,246,.2); padding:5px 12px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; }
+    .btn-blue:hover { background:rgba(59,130,246,.25); }
+    .btn-green { background:rgba(34,197,94,.12); color:#4ade80; border:1px solid rgba(34,197,94,.2); padding:5px 12px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; }
+    .btn-green:hover { background:rgba(34,197,94,.22); }
+
+    /* ── Progress bar ── */
+    .prog-track { background:rgba(255,255,255,.08); border-radius:999px; height:6px; overflow:hidden; }
+    .prog-fill  { background:linear-gradient(90deg,#D43B3B,#3b82f6); height:6px; border-radius:999px; transition:width .3s; }
+
+    /* ── Skeleton loader ── */
+    .skeleton {
+      background: linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);
+      background-size: 400px;
+      animation: shimmer 1.4s infinite;
+      border-radius: 8px;
+    }
+    @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,.07); margin: 16px 0; }
+
+    /* ── URL input ── */
+    .url-input {
+      width: 100%;
+      background: rgba(255,255,255,.05);
+      border: 1.5px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #e2e8f0;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .url-input::placeholder { color: #475569; }
+    .url-input:focus { border-color: #D43B3B; background: rgba(212,59,59,.04); }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 999px; }
+
+    /* ── Pulse animation ── */
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── Glow animation ── */
+    @keyframes glow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(212,59,59,0); }
+      50% { box-shadow: 0 0 0 4px rgba(212,59,59,.15); }
+    }
+    .nav-item.active { animation: glow 3s ease-in-out infinite; }
+
+    /* ── Chart container ── */
+    .chart-wrap { position: relative; }
+
+    /* ── Responsive dashboard two-column ── */
+    @media (max-width: 900px) {
+      #pane-stats .page-content > div[style*="grid-template-columns:1fr 340px"] {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    /* ── hidden util ── */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- Mobile overlay -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<div id="sidebar">
+  <div id="sidebar-logo">
+    <div style="display:flex;align-items:center;justify-content:center;padding:4px 0;">
+      <img src="TrueForge.jpeg" alt="True Forge" style="height:54px;width:auto;filter:invert(1);object-fit:contain;"/>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section-label">Main</div>
+    <button class="nav-item active" id="nb-upload"  onclick="showTab('upload')">
+      <span class="icon">🎬</span>Upload
+    </button>
+    <button class="nav-item" id="nb-library" onclick="showTab('library')">
+      <span class="icon">📂</span>Library
+    </button>
+    <button class="nav-item" id="nb-search"  onclick="showTab('search')">
+      <span class="icon">🔍</span>Search
+    </button>
+    <div class="nav-section-label">Protection</div>
+    <button class="nav-item" id="nb-monitor" onclick="showTab('monitor')">
+      <span class="icon">🌐</span>Monitor
+    </button>
+    <button class="nav-item" id="nb-alerts"  onclick="showTab('alerts')">
+      <span class="icon">🚨</span>Alerts
+      <span id="alert-badge" class="nav-badge hidden"></span>
+    </button>
+    <div class="nav-section-label">Analytics</div>
+    <button class="nav-item" id="nb-stats"   onclick="showTab('stats')">
+      <span class="icon">📊</span>Dashboard
+    </button>
+  </nav>
+
+  <div id="sidebar-footer">
+    <div style="display:flex;align-items:center;gap:8px;padding:2px 4px;">
+      <div id="health-dot" style="width:8px;height:8px;border-radius:50%;background:#334155;flex-shrink:0;transition:background .3s;"></div>
+      <div id="health-text" style="color:#334155;font-size:11px;">checking…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div id="main">
+
+  <!-- Mobile topbar -->
+  <div id="topbar">
+    <button onclick="openSidebar()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0;">☰</button>
+    <img src="TrueForge.jpeg" alt="True Forge" style="height:32px;width:auto;filter:invert(1);object-fit:contain;"/>
+  </div>
+
+  <!-- ══════ UPLOAD ══════ -->
+  <div id="pane-upload">
+    <div class="page-header">
+      <h1>Register Content</h1>
+      <p>Upload original videos to build your protected media library.</p>
+    </div>
+    <div class="page-content" style="max-width:680px;">
+
+      <!-- Drop zone -->
+      <div id="drop-zone" class="drop-zone" style="padding:52px 24px;text-align:center;"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="handleDrop(event)">
+        <div style="font-size:44px;margin-bottom:14px;filter:drop-shadow(0 0 12px rgba(212,59,59,.4));">🎬</div>
+        <p style="color:#e2e8f0;font-size:14px;font-weight:600;margin:0 0 6px;">Drag &amp; drop your video or image here</p>
+        <p style="color:#475569;font-size:12px;margin:0;">or <span style="color:#D43B3B;font-weight:600;cursor:pointer;">click to browse</span> · MP4, MKV, MOV, WebM · JPG, PNG, WEBP · max 500 MB</p>
+      </div>
+      <input id="file-input" type="file" accept="video/*,image/*" class="hidden" onchange="uploadFile(this.files[0])"/>
+
+      <!-- Progress -->
+      <div id="upload-progress" class="hidden" style="margin-top:16px;">
+        <div class="prog-track"><div id="prog-bar" class="prog-fill" style="width:0%"></div></div>
+        <p id="prog-text" style="color:#64748b;font-size:12px;margin:6px 0 0;"></p>
+      </div>
+
+      <!-- Result -->
+      <div id="upload-result" class="hidden card" style="margin-top:16px;"></div>
+
+      <!-- Watermark offer -->
+      <div id="wm-offer" class="hidden card-glow" style="margin-top:14px;">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <div style="font-size:24px;line-height:1;filter:drop-shadow(0 0 8px rgba(212,59,59,.5));">🔏</div>
+          <div style="flex:1;">
+            <p style="font-weight:700;color:#f1f5f9;margin:0 0 4px;font-size:14px;">Embed Invisible Watermark?</p>
+            <p style="font-size:12px;color:#64748b;margin:0 0 14px;">Adds a DCT fingerprint detectable even after re-encoding or compression.</p>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <button id="wm-btn" onclick="embedWatermark()" class="btn-primary" style="padding:7px 16px;font-size:12px;">Embed Now</button>
+              <span id="wm-status" style="font-size:12px;color:#64748b;"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════ LIBRARY ══════ -->
+  <div id="pane-library" class="hidden">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h1>Asset Library</h1>
+        <p>All registered original content.</p>
+      </div>
+      <button onclick="loadLibrary()" class="btn-ghost">↺ Refresh</button>
+    </div>
+    <div class="page-content">
+      <div id="library-list"></div>
+    </div>
+  </div>
+
+  <!-- ══════ SEARCH ══════ -->
+  <div id="pane-search" class="hidden">
+    <div class="page-header">
+      <h1>Search for Copies</h1>
+      <p>Upload a suspected infringing video or image — it will be compared against all registered originals.</p>
+    </div>
+    <div class="page-content" style="max-width:680px;">
+      <div id="search-drop" class="drop-zone" style="padding:44px 24px;text-align:center;"
+           onclick="document.getElementById('search-input').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="ev=>{ev.preventDefault();this.classList.remove('over');searchFile(ev.dataTransfer.files[0])}">
+        <div style="font-size:40px;margin-bottom:12px;filter:drop-shadow(0 0 10px rgba(59,130,246,.4));">🔍</div>
+        <p style="color:#e2e8f0;font-size:14px;font-weight:600;margin:0 0 6px;">Drop suspected video or image here</p>
+        <p style="color:#475569;font-size:12px;margin:0;">or <span style="color:#D43B3B;font-weight:600;cursor:pointer;">click to browse</span></p>
+      </div>
+      <input id="search-input" type="file" accept="video/*,image/*" class="hidden" onchange="searchFile(this.files[0])"/>
+
+      <div id="search-spinner" class="hidden card" style="margin-top:16px;text-align:center;padding:36px;">
+        <div style="font-size:32px;margin-bottom:10px;animation:pulse 1.5s infinite;">⏳</div>
+        <p style="color:#94a3b8;font-size:13px;font-weight:600;margin:0;">Fingerprinting &amp; searching…</p>
+        <p style="color:#475569;font-size:11px;margin:4px 0 0;">This may take 20–60 seconds</p>
+      </div>
+
+      <div id="search-results" class="hidden" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <!-- ══════ MONITOR ══════ -->
+  <div id="pane-monitor" class="hidden">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h1>URL Monitoring</h1>
+        <p>Submit a URL — the system downloads it and checks for matches.</p>
+      </div>
+      <button onclick="loadJobs()" class="btn-ghost">↺ Refresh</button>
+    </div>
+    <div class="page-content" style="max-width:700px;">
+
+      <div class="card" style="margin-bottom:22px;">
+        <p style="font-weight:700;color:#f1f5f9;font-size:13px;margin:0 0 14px;">Submit URL to Check</p>
+        <div style="display:flex;gap:8px;">
+          <input id="url-input" type="url" class="url-input" placeholder="https://youtube.com/watch?v=…"/>
+          <button onclick="submitUrl()" class="btn-primary" style="white-space:nowrap;">Check URL</button>
+        </div>
+        <p id="url-error" class="hidden" style="color:#f87171;font-size:12px;margin:6px 0 0;"></p>
+      </div>
+
+      <div style="font-weight:600;font-size:13px;color:#94a3b8;margin-bottom:12px;letter-spacing:.3px;text-transform:uppercase;font-size:11px;">Recent Jobs</div>
+      <div id="jobs-list"></div>
+    </div>
+  </div>
+
+  <!-- ══════ ALERTS ══════ -->
+  <div id="pane-alerts" class="hidden">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h1>Match Alerts</h1>
+        <p>Detected copyright violations requiring review.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;cursor:pointer;">
+          <input type="checkbox" id="unreviewed-only" onchange="loadAlerts()" style="accent-color:#D43B3B;"/>
+          Unreviewed only
+        </label>
+        <button onclick="loadAlerts()" class="btn-ghost">↺ Refresh</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div id="alerts-list"></div>
+    </div>
+  </div>
+
+  <!-- ══════ STATS / DASHBOARD ══════ -->
+  <div id="pane-stats" class="hidden">
+    <!-- Greeting header -->
+    <div style="padding:28px 30px 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h1 id="dash-greeting" style="font-size:24px;font-weight:800;color:#f1f5f9;margin:0 0 4px;letter-spacing:-.4px;">Good morning ⚡</h1>
+          <p style="font-size:13px;color:#475569;margin:0;">Here's your media protection status today.</p>
+        </div>
+        <button onclick="loadStats()" class="btn-ghost" style="font-size:12px;">↺ Refresh</button>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px;">
+        <div class="kpi">
+          <div class="kpi-value" id="stat-assets" style="color:#60a5fa;">—</div>
+          <div class="kpi-label">Registered Assets</div>
+        </div>
+        <div class="kpi" style="--kpi-color:#4ade80">
+          <div class="kpi-value" id="stat-watermarked" style="color:#4ade80;">—</div>
+          <div class="kpi-label">Watermarked</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-value" id="stat-alerts" style="color:#f87171;">—</div>
+          <div class="kpi-label">Total Alerts</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-value" id="stat-unreviewed" style="color:#E05050;">—</div>
+          <div class="kpi-label">Unreviewed</div>
+        </div>
+      </div>
+
+      <!-- Two-column layout -->
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
+
+        <!-- Left column -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- Alert trend chart -->
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:#475569;margin:0 0 18px;text-transform:uppercase;letter-spacing:.7px;">Alert Trend — Last 30 Days</p>
+            <div class="chart-wrap"><canvas id="chart-alerts" height="140"></canvas></div>
+          </div>
+
+          <!-- Match type summary -->
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:#475569;margin:0 0 18px;text-transform:uppercase;letter-spacing:.7px;">Match Type Summary</p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;">
+              <div style="background:linear-gradient(145deg,rgba(239,68,68,.08),rgba(15,26,48,.8));border:1px solid rgba(239,68,68,.15);border-radius:12px;padding:16px 8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);">
+                <div id="stat-exact" style="font-size:30px;font-weight:800;color:#f87171;">—</div>
+                <div style="font-size:10px;color:#64748b;font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;">Exact Copies</div>
+              </div>
+              <div style="background:linear-gradient(145deg,rgba(212,59,59,.09),rgba(15,26,48,.8));border:1px solid rgba(212,59,59,.15);border-radius:12px;padding:16px 8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);">
+                <div id="stat-near" style="font-size:30px;font-weight:800;color:#E05050;">—</div>
+                <div style="font-size:10px;color:#64748b;font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;">Near Dupes</div>
+              </div>
+              <div style="background:linear-gradient(145deg,rgba(59,130,246,.08),rgba(15,26,48,.8));border:1px solid rgba(59,130,246,.14);border-radius:12px;padding:16px 8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);">
+                <div id="stat-jobs" style="font-size:30px;font-weight:800;color:#60a5fa;">—</div>
+                <div style="font-size:10px;color:#64748b;font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;">Jobs Run</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- Welcome / status card -->
+          <div style="background:linear-gradient(135deg,#102244 0%,#0b1a30 45%,#0d1e38 75%,rgba(212,59,59,.07) 100%);border:1px solid rgba(212,59,59,.22);border-radius:16px;padding:20px;position:relative;overflow:hidden;box-shadow:0 4px 28px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04);">
+            <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:radial-gradient(circle,rgba(212,59,59,.2) 0%,transparent 70%);pointer-events:none;"></div>
+            <p style="font-size:14px;font-weight:700;color:#f1f5f9;margin:0 0 4px;">System Status 🛡️</p>
+            <p style="font-size:12px;color:#475569;margin:0 0 14px;">True Forge protection engine is active.</p>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div id="dash-dot" style="width:8px;height:8px;border-radius:50%;background:#334155;"></div>
+              <span id="dash-status" style="font-size:12px;color:#475569;">checking…</span>
+            </div>
+          </div>
+
+          <!-- Platform breakdown -->
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:#475569;margin:0 0 18px;text-transform:uppercase;letter-spacing:.7px;">Platform Breakdown</p>
+            <div class="chart-wrap"><canvas id="chart-platforms" height="160"></canvas></div>
+          </div>
+
+          <!-- Quick actions -->
+          <div class="card">
+            <p style="font-size:11px;font-weight:700;color:#475569;margin:0 0 14px;text-transform:uppercase;letter-spacing:.7px;">Quick Actions</p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button onclick="showTab('upload')" class="btn-primary" style="width:100%;text-align:left;padding:10px 14px;">🎬 Upload New Asset</button>
+              <button onclick="showTab('search')" class="btn-ghost" style="width:100%;text-align:left;padding:10px 14px;">🔍 Search for Copies</button>
+              <button onclick="showTab('monitor')" class="btn-ghost" style="width:100%;text-align:left;padding:10px 14px;">🌐 Monitor a URL</button>
+              <button onclick="showTab('alerts')" class="btn-ghost" style="width:100%;text-align:left;padding:10px 14px;">🚨 Review Alerts</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const API = '/api';
+let _lastUploadId = null;
+let _alertChart = null, _platformChart = null;
+const TABS = ['upload','library','search','monitor','alerts','stats'];
+
+// ── Sidebar mobile ──
+function openSidebar()  {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+// ── Tab ──
+function showTab(name) {
+  TABS.forEach(t => {
+    document.getElementById(`pane-${t}`).classList.toggle('hidden', t !== name);
+    const nb = document.getElementById(`nb-${t}`);
+    if (nb) nb.classList.toggle('active', t === name);
+  });
+  closeSidebar();
+  const loaders = {library:loadLibrary, monitor:loadJobs, alerts:loadAlerts, stats:loadStats};
+  loaders[name]?.();
+}
+
+// ── Health ──
+async function checkHealth() {
+  try {
+    const d = await apiFetch('/health');
+    const dot  = document.getElementById('health-dot');
+    const text = document.getElementById('health-text');
+    const isOk = d.status === 'ok';
+    dot.style.background  = isOk ? '#22c55e' : '#eab308';
+    text.style.color = isOk ? '#4ade80' : '#fbbf24';
+    text.textContent = `${d.status} · ${d.indexed_assets} indexed`;
+    const dd = document.getElementById('dash-dot');
+    const ds = document.getElementById('dash-status');
+    if (dd) dd.style.background = isOk ? '#22c55e' : '#eab308';
+    if (ds) { ds.textContent = isOk ? 'All systems operational' : 'Server degraded'; ds.style.color = isOk ? '#4ade80' : '#fbbf24'; }
+
+    const stats = await apiFetch('/stats/');
+    const unrev = stats?.alerts?.unreviewed ?? 0;
+    const badge = document.getElementById('alert-badge');
+    if (unrev > 0) { badge.textContent = unrev; badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+  } catch {
+    const dot  = document.getElementById('health-dot');
+    const text = document.getElementById('health-text');
+    dot.style.background = '#ef4444';
+    text.style.color = '#f87171';
+    text.textContent = 'offline';
+  }
+}
+
+// ── Upload ──
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('over');
+  uploadFile(e.dataTransfer.files[0]);
+}
+
+async function uploadFile(file) {
+  if (!file) return;
+  _lastUploadId = null;
+  document.getElementById('upload-progress').classList.remove('hidden');
+  document.getElementById('upload-result').classList.add('hidden');
+  document.getElementById('wm-offer').classList.add('hidden');
+  setProgress(20, `Uploading ${file.name}…`);
+
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    setProgress(60, 'Server is processing…');
+    const r = await fetch(`${API}/assets/upload`, {method:'POST', body:form});
+    const d = await r.json();
+    setProgress(100, '');
+    const el = document.getElementById('upload-result');
+    el.classList.remove('hidden');
+    if (r.ok) {
+      _lastUploadId = d.asset_id;
+      el.innerHTML = `
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="font-size:28px;line-height:1;">✅</div>
+          <div>
+            <p style="font-weight:700;color:#f1f5f9;margin:0 0 4px;">${escHtml(d.filename)}</p>
+            <p style="font-size:11px;color:#475569;margin:0 0 6px;">ID: <code style="background:rgba(255,255,255,.07);color:#94a3b8;padding:2px 6px;border-radius:5px;">${d.asset_id}</code></p>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;color:#475569;">Status:</span>
+              <span id="up-status" class="pill pill-pending">pending</span>
+              <span style="font-size:11px;color:#64748b;animation:pulse 1.5s infinite;" id="fingerprint-msg">fingerprinting…</span>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('wm-offer').classList.remove('hidden');
+      pollStatus(d.asset_id);
+    } else {
+      el.innerHTML = `<div style="display:flex;gap:10px;align-items:center;">
+        <span style="font-size:20px;">❌</span>
+        <span style="color:#f87171;font-size:13px;">${d.detail || 'Upload failed'}</span></div>`;
+    }
+  } catch(e) {
+    const el = document.getElementById('upload-result');
+    el.classList.remove('hidden');
+    el.innerHTML = `<div style="color:#f87171;font-size:13px;">❌ ${e.message}</div>`;
+  } finally {
+    setTimeout(() => document.getElementById('upload-progress').classList.add('hidden'), 1500);
+    document.getElementById('file-input').value = '';
+  }
+}
+
+async function pollStatus(id) {
+  for (let i = 0; i < 60; i++) {
+    await sleep(3000);
+    try {
+      const d = await apiFetch(`/assets/${id}`);
+      const el = document.getElementById('up-status');
+      const msg = document.getElementById('fingerprint-msg');
+      if (el) {
+        el.className = `pill pill-${d.status}`;
+        el.textContent = d.status;
+      }
+      if (d.status === 'ready') {
+        if (msg) msg.textContent = '✓ Fingerprinting complete';
+        checkHealth(); return;
+      }
+      if (d.status === 'failed') {
+        if (msg) msg.textContent = '✗ Fingerprinting failed';
+        return;
+      }
+    } catch { return; }
+  }
+}
+
+function setProgress(pct, msg) {
+  document.getElementById('prog-bar').style.width = `${pct}%`;
+  document.getElementById('prog-text').textContent = msg;
+}
+
+// ── Watermark ──
+async function embedWatermark() {
+  if (!_lastUploadId) return;
+  const btn = document.getElementById('wm-btn');
+  const statusEl = document.getElementById('wm-status');
+  btn.disabled = true; btn.textContent = 'Embedding…';
+  statusEl.textContent = '';
+  try {
+    const r = await fetch(`${API}/watermark/${_lastUploadId}/embed`, {method:'POST'});
+    const d = await r.json();
+    if (r.ok) {
+      statusEl.textContent = '✓ Watermark embedded';
+      statusEl.style.color = '#4ade80';
+      btn.textContent = '✓ Done';
+    } else {
+      statusEl.textContent = '✗ ' + (d.detail || 'Failed');
+      statusEl.style.color = '#f87171';
+      btn.disabled = false; btn.textContent = 'Retry';
+    }
+  } catch(e) {
+    statusEl.textContent = '✗ ' + e.message;
+    statusEl.style.color = '#f87171';
+    btn.disabled = false; btn.textContent = 'Retry';
+  }
+}
+
+// ── Library ──
+async function loadLibrary() {
+  const el = document.getElementById('library-list');
+  el.innerHTML = skeletonList(3);
+  try {
+    const assets = await apiFetch('/assets/?limit=100');
+    if (!assets.length) { el.innerHTML = emptyState('📂', 'No assets yet', 'Upload a video to get started.'); return; }
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">${
+      assets.map(a => {
+        const gm = a.gemini_metadata;
+        const gemBadge = gm
+          ? `<span style="font-size:10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:2px 8px;color:#4ade80;font-weight:600;">✦ ${gm.overall_classification}${gm.sport_type ? ' · '+gm.sport_type : ''}</span>`
+          : '';
+        return `
+        <div class="card card-sm" style="display:flex;align-items:center;gap:14px;">
+          <div style="font-size:24px;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(212,59,59,.3));">🎬</div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-weight:600;color:#f1f5f9;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(a.filename)}</p>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <p style="font-size:11px;color:#475569;margin:0;">${fmtDate(a.created_at)} · ${a.duration_seconds?.toFixed(1) ?? '?'}s</p>
+              ${gemBadge}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
+            <span class="pill pill-${a.status}">${a.status}</span>
+            <button onclick="searchByAsset('${a.asset_id}')" class="btn-blue">Find copies</button>
+            <button onclick="goWatermark('${a.asset_id}')" class="btn-green">Watermark</button>
+            <button onclick="deleteAsset('${a.asset_id}',this)" class="btn-danger">Delete</button>
+          </div>
+        </div>`;
+      }).join('')
+    }</div>`;
+  } catch(e) { el.innerHTML = errCard(e); }
+}
+
+async function deleteAsset(id, btn) {
+  if (!confirm('Delete this asset and all its data?')) return;
+  btn.disabled = true;
+  await fetch(`${API}/assets/${id}`, {method:'DELETE'});
+  loadLibrary(); checkHealth();
+}
+
+async function searchByAsset(id) {
+  showTab('search');
+  const sp = document.getElementById('search-spinner');
+  const el = document.getElementById('search-results');
+  sp.classList.remove('hidden');
+  el.classList.add('hidden');
+  try {
+    const r = await fetch(`${API}/search/asset/${id}`, {method:'POST'});
+    const d = await r.json();
+    sp.classList.add('hidden');
+    el.classList.remove('hidden');
+    renderResults(d, el);
+  } catch(e) {
+    sp.classList.add('hidden');
+    el.classList.remove('hidden');
+    el.innerHTML = errCard(e);
+  }
+}
+
+function goWatermark(id) {
+  _lastUploadId = id;
+  showTab('upload');
+  document.getElementById('wm-offer').classList.remove('hidden');
+}
+
+// ── Search ──
+async function searchFile(file) {
+  if (!file) return;
+  const sp = document.getElementById('search-spinner');
+  const el = document.getElementById('search-results');
+  sp.classList.remove('hidden');
+  el.classList.add('hidden');
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const r = await fetch(`${API}/search/upload`, {method:'POST', body:form});
+    const d = await r.json();
+    sp.classList.add('hidden');
+    el.classList.remove('hidden');
+    renderResults(d, el);
+  } catch(e) {
+    sp.classList.add('hidden');
+    el.classList.remove('hidden');
+    el.innerHTML = errCard(e);
+  }
+  document.getElementById('search-input').value = '';
+}
+
+function geminiTag(meta) {
+  if (!meta) return '';
+  const sport = meta.sport_type ? ` · ${meta.sport_type}` : '';
+  const conf = meta.confidence ? ` (${Math.round(meta.confidence * 100)}%)` : '';
+  return `<div style="display:inline-flex;align-items:center;gap:5px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:2px 8px;font-size:11px;color:#4ade80;font-weight:600;margin-top:6px;">
+    <span>✦ Gemini AI</span>
+    <span style="font-weight:400;color:#64748b;">${meta.overall_classification}${sport}${conf}</span>
+  </div>`;
+}
+
+function renderResults(data, el) {
+  const {results, total_candidates, processing_time_ms} = data;
+  if (!results.length) {
+    el.innerHTML = `<div class="card" style="text-align:center;padding:36px;">
+      <div style="font-size:36px;margin-bottom:10px;">✅</div>
+      <p style="font-weight:700;color:#f1f5f9;margin:0 0 4px;">No matches found</p>
+      <p style="font-size:12px;color:#475569;margin:0;">${total_candidates} candidates checked · ${processing_time_ms}ms</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = `
+    <p style="font-size:12px;color:#64748b;margin:0 0 12px;">
+      <strong style="color:#f87171;">${results.length}</strong> match(es) · ${total_candidates} checked · ${processing_time_ms}ms
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px;">${
+      results.map(r => `
+      <div class="card card-sm">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+          <p style="font-weight:600;color:#f1f5f9;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(r.filename)}</p>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            ${r.verdict ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:${r.verdict==='MATCH'?'rgba(239,68,68,.18)':r.verdict==='POSSIBLE_MATCH'?'rgba(212,59,59,.18)':'rgba(255,255,255,.07)'};color:${r.verdict==='MATCH'?'#f87171':r.verdict==='POSSIBLE_MATCH'?'#E05050':'#94a3b8'};">${r.verdict.replace('_',' ')}</span>` : ''}
+            <span class="pill pill-${r.match_type}">${r.match_type.replace('_',' ')}</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="match-bar-bg" style="flex:1;"><div class="match-bar-fg" style="width:${(r.similarity_score*100).toFixed(0)}%"></div></div>
+          <span style="font-size:12px;font-weight:700;color:#f1f5f9;flex-shrink:0;">${(r.similarity_score*100).toFixed(1)}%</span>
+        </div>
+        <p style="font-size:11px;color:#475569;margin:6px 0 0;">${r.duration_seconds?.toFixed(1) ?? '?'}s · ${fmtDate(r.created_at)}</p>
+        ${geminiTag(r.gemini_metadata)}
+      </div>`).join('')
+    }</div>`;
+}
+
+// ── Monitor ──
+async function submitUrl() {
+  const input = document.getElementById('url-input');
+  const errEl = document.getElementById('url-error');
+  const url = input.value.trim();
+  errEl.classList.add('hidden');
+
+  if (!url.startsWith('http')) {
+    errEl.textContent = 'Enter a valid http(s) URL';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  const btn = document.querySelector('[onclick="submitUrl()"]');
+  btn.disabled = true; btn.textContent = 'Queuing…';
+
+  try {
+    const r = await fetch(`${API}/monitor/submit`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({url})
+    });
+    const d = await r.json();
+    if (r.ok) { input.value = ''; loadJobs(); }
+    else { errEl.textContent = d.detail || 'Submission failed'; errEl.classList.remove('hidden'); }
+  } catch(e) {
+    errEl.textContent = e.message; errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Check URL';
+  }
+}
+
+async function loadJobs() {
+  const el = document.getElementById('jobs-list');
+  el.innerHTML = skeletonList(3);
+  try {
+    const jobs = await apiFetch('/monitor/jobs?limit=50');
+    if (!jobs.length) { el.innerHTML = emptyState('🌐', 'No jobs yet', 'Submit a URL above to start monitoring.'); return; }
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">${
+      jobs.map(j => `
+      <div class="card card-sm">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+          <div style="flex:1;min-width:0;">
+            <p style="font-size:12px;font-weight:600;color:#f1f5f9;margin:0 0 3px;word-break:break-all;">${escHtml(j.url)}</p>
+            <p style="font-size:11px;color:#475569;margin:0;">${j.platform ?? ''} ${j.video_title ? '· ' + escHtml(j.video_title.slice(0,60)) : ''}</p>
+            ${j.error_message ? `<p style="font-size:11px;color:#f87171;margin:4px 0 0;">✗ ${escHtml(j.error_message)}</p>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            ${j.alerts_created > 0 ? `<span class="pill pill-exact" style="font-size:10px;">${j.alerts_created} alerts</span>` : ''}
+            <span class="pill pill-${j.status}">${j.status}</span>
+            <button onclick="deleteJob('${j.job_id}',this)" class="btn-ghost" style="padding:4px 10px;font-size:11px;">✕</button>
+          </div>
+        </div>
+      </div>`).join('')
+    }</div>`;
+    if (jobs.some(j => j.status === 'running' || j.status === 'queued'))
+      setTimeout(loadJobs, 5000);
+  } catch(e) { el.innerHTML = errCard(e); }
+}
+
+async function deleteJob(id, btn) {
+  btn.disabled = true;
+  await fetch(`${API}/monitor/jobs/${id}`, {method:'DELETE'}).catch(() => {});
+  loadJobs();
+}
+
+// ── Alerts ──
+async function loadAlerts() {
+  const el = document.getElementById('alerts-list');
+  const unreviewedOnly = document.getElementById('unreviewed-only').checked;
+  el.innerHTML = skeletonList(3);
+  try {
+    const alerts = await apiFetch(`/monitor/alerts?limit=100&unreviewed_only=${unreviewedOnly}`);
+    if (!alerts.length) { el.innerHTML = emptyState('🚨', 'No alerts', unreviewedOnly ? 'All alerts have been reviewed.' : 'No matches detected yet.'); return; }
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">${
+      alerts.map(a => `
+      <div class="card card-sm" style="${a.reviewed ? 'opacity:.5;' : ''}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span class="pill pill-${a.match_type}">${a.match_type.replace('_',' ')}</span>
+              <span style="font-weight:700;font-size:14px;color:#f1f5f9;">${(a.similarity_score*100).toFixed(1)}% match</span>
+            </div>
+            <p style="font-size:12px;color:#94a3b8;margin:0 0 2px;">Matched: <strong style="color:#e2e8f0;">${escHtml(a.matched_filename)}</strong></p>
+            <p style="font-size:11px;color:#475569;margin:0 0 2px;word-break:break-all;">Source: ${escHtml(a.source_url)}</p>
+            <p style="font-size:11px;color:#475569;margin:0;">
+              ${a.platform ?? ''} · ${fmtDate(a.created_at)}
+              ${a.tamper_score != null ? ` · tamper: ${(a.tamper_score*100).toFixed(0)}%` : ''}
+            </p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;flex-shrink:0;">
+            <a href="${API}/reports/${a.alert_id}/html" target="_blank" class="btn-blue" style="display:inline-block;text-decoration:none;">📄 Report</a>
+            ${!a.reviewed
+              ? `<button onclick="reviewAlert('${a.alert_id}',this)" class="btn-green">✓ Mark reviewed</button>`
+              : `<span style="font-size:11px;color:#334155;">reviewed</span>`}
+          </div>
+        </div>
+      </div>`).join('')
+    }</div>`;
+  } catch(e) { el.innerHTML = errCard(e); }
+}
+
+async function reviewAlert(id, btn) {
+  btn.disabled = true;
+  await fetch(`${API}/monitor/alerts/${id}/review`, {method:'PATCH'});
+  loadAlerts(); checkHealth();
+}
+
+// ── Stats ──
+async function loadStats() {
+  try {
+    const d = await apiFetch('/stats/');
+    document.getElementById('stat-assets').textContent      = d.assets.ready;
+    document.getElementById('stat-alerts').textContent      = d.alerts.total;
+    document.getElementById('stat-unreviewed').textContent  = d.alerts.unreviewed;
+    document.getElementById('stat-watermarked').textContent = d.assets.watermarked;
+    document.getElementById('stat-exact').textContent       = d.alerts.exact_matches;
+    document.getElementById('stat-near').textContent        = d.alerts.near_duplicates;
+    document.getElementById('stat-jobs').textContent        = d.monitoring.total_jobs;
+    renderCharts(d.charts, d.alerts.by_platform);
+  } catch(e) { console.error('Stats load failed', e); }
+}
+
+function renderCharts(charts, platforms) {
+  const GRID = 'rgba(255,255,255,.06)';
+  const TICK = '#475569';
+
+  const alertCtx = document.getElementById('chart-alerts').getContext('2d');
+  if (_alertChart) _alertChart.destroy();
+  _alertChart = new Chart(alertCtx, {
+    type: 'bar',
+    data: {
+      labels: charts.daily_alerts.map(r => r.date.slice(5)),
+      datasets: [{
+        label: 'Alerts',
+        data: charts.daily_alerts.map(r => r.count),
+        backgroundColor: 'rgba(212,59,59,.8)',
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend:{display:false} },
+      scales: {
+        y: { beginAtZero:true, ticks:{precision:0,color:TICK,font:{size:11}}, grid:{color:GRID} },
+        x: { ticks:{maxTicksLimit:8,color:TICK,font:{size:11}}, grid:{display:false} }
+      }
+    }
+  });
+
+  const platCtx = document.getElementById('chart-platforms').getContext('2d');
+  if (_platformChart) _platformChart.destroy();
+  const platLabels = Object.keys(platforms);
+  const platData   = Object.values(platforms);
+  _platformChart = new Chart(platCtx, {
+    type: 'doughnut',
+    data: {
+      labels: platLabels.length ? platLabels : ['No data'],
+      datasets: [{
+        data: platData.length ? platData : [1],
+        backgroundColor: ['#3b82f6','#D43B3B','#22c55e','#ef4444','#8b5cf6','#ec4899'],
+        borderColor: '#1F1F1F',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth:10, font:{size:11}, color:'#64748b', padding:14 }
+        }
+      }
+    }
+  });
+}
+
+// ── Helpers ──
+async function apiFetch(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'2-digit'});
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function skeletonList(n) {
+  return Array.from({length:n}, (_,i) => `
+    <div class="card card-sm" style="margin-bottom:10px;display:flex;gap:12px;align-items:center;">
+      <div class="skeleton" style="width:32px;height:32px;border-radius:8px;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div class="skeleton" style="height:12px;width:${60+i*10}%;margin-bottom:6px;"></div>
+        <div class="skeleton" style="height:10px;width:40%;"></div>
+      </div>
+    </div>`).join('');
+}
+
+function emptyState(icon, title, sub) {
+  return `<div style="text-align:center;padding:56px 20px;">
+    <div style="font-size:40px;margin-bottom:12px;opacity:.4;">${icon}</div>
+    <p style="font-weight:700;color:#475569;font-size:14px;margin:0 0 4px;">${title}</p>
+    <p style="font-size:12px;color:#334155;margin:0;">${sub}</p>
+  </div>`;
+}
+
+function errCard(e) {
+  return `<div class="card" style="border-left:3px solid #ef4444;padding:14px 18px;">
+    <p style="color:#f87171;font-size:13px;margin:0;">⚠ ${e.message}</p>
+  </div>`;
+}
+
+// ── Greeting ──
+function updateGreeting() {
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const icons = ['🌙','🌅','☀️','⚡','🌆','🌙'];
+  const icon = h < 6 ? '🌙' : h < 9 ? '🌅' : h < 17 ? '⚡' : h < 20 ? '🌆' : '🌙';
+  const el = document.getElementById('dash-greeting');
+  if (el) el.textContent = `${g} ${icon}`;
+}
+
+// ── Init ──
+updateGreeting();
+checkHealth();
+setInterval(checkHealth, 30000);
+loadLibrary();
+</script>
+</body>
+</html>

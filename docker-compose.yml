@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-smp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-smp_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smp_user} -d ${POSTGRES_DB:-smp_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-smp_user}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-smp_db}
+      DATA_DIR: /app/data
+      FAISS_INDEX_PATH: /app/data/indices/visual.index
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MAX_VIDEO_SIZE_MB: ${MAX_VIDEO_SIZE_MB:-500}
+      FRAME_SAMPLE_RATE: ${FRAME_SAMPLE_RATE:-1}
+      HASH_SIZE: ${HASH_SIZE:-16}
+      MATCH_THRESHOLD: ${MATCH_THRESHOLD:-0.85}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      GOOGLE_AI_ENABLED: ${GOOGLE_AI_ENABLED:-true}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+    volumes:
+      - ./data:/app/data
+      - ./frontend:/app/frontend:ro
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:
