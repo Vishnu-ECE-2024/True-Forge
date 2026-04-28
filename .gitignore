@@ -9,3 +9,10 @@ venv/
 node_modules/
 android-app/
 desktop-app/
+ANALYSIS.md
+CHANGE_REPORT*.md
+Report.md
+README_LAUNCH.md
+QUICKSTART.sh
+*.db
+
