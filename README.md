@@ -479,7 +479,7 @@ True-Forge/
 
 <br/>
 
-Made by [Vishnu Vardhan K S](https://github.com/Vishnu-ECE-2024)
+Made by [Vishnu Vardhan K S](https://github.com/Vishnu-ECE-2024) · VS Kamlesh · Yugawathi E
 
 ![Visits](https://visitor-badge.laobi.icu/badge?page_id=Vishnu-ECE-2024.True-Forge&left_color=black&right_color=D43B3B)
 
