@@ -12,11 +12,12 @@ from src.db.models import Base
 
 logger = logging.getLogger(__name__)
 
+_is_sqlite = settings.database_url.startswith("sqlite")
 engine = create_engine(
     settings.database_url,
-    pool_size=5,
-    max_overflow=10,
-    pool_pre_ping=True,   # reconnect if connection dropped
+    connect_args={"check_same_thread": False} if _is_sqlite else {},
+    pool_pre_ping=not _is_sqlite,
+    **({} if _is_sqlite else {"pool_size": 5, "max_overflow": 10}),
 )
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)

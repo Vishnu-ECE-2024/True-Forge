@@ -7,8 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # Database
-    database_url: str = "postgresql://smp_user:changeme@localhost:5432/smp_db"
+    # Database (SQLite by default — no external DB needed)
+    database_url: str = "sqlite:///./trueforge.db"
 
     # Storage
     data_dir: Path = Path("/app/data")
